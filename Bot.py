@@ -10,7 +10,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = 8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds
+TOKEN = "8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds"
 
 logging.basicConfig(level=logging.INFO)
 
