@@ -24,12 +24,12 @@ from telegram.ext import (
 # ============================================================
 # CONFIG
 # ============================================================
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds").strip()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyDrf2qAL0FQJJ2_TrKWkz5IVedU-yok-uc").strip()
-VISICOM_KEY = os.getenv("VISICOM_KEY", "e14865d659080719d865805b00e967e6").strip()
-MAPBOX_TOKEN = os.getenv("MAPBOX_TOKEN", "pk.eyJ1IjoibXlha2lzaDEiLCJhIjoiY210bnFscjVtMGd0NzJ3cjM5Y3Z6anJrciJ9.nHWBCkwZk2fLsHp1cFsjpg").strip()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "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").strip()
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna").strip()
+BOT_TOKEN = os.getenv "8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds".strip()
+GOOGLE_API_KEY = os.getenv "AIzaSyDrf2qAL0FQJJ2_TrKWkz5IVedU-yok-uc".strip()
+VISICOM_KEY = os.getenv "e14865d659080719d865805b00e967e6".strip()
+MAPBOX_TOKEN = os.getenv "pk.eyJ1IjoibXlha2lzaDEiLCJhIjoiY210bnFscjVtMGd0NzJ3cjM5Y3Z6anJrciJ9.nHWBCkwZk2fLsHp1cFsjpg".strip()
+OPENAI_API_KEY = os.getenv "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".strip()
+OPENAI_MODEL = os.getenv "gpt-5.6-luna".strip()
 
 # Mapbox Temporary responses must not be persistently cached.
 # Set 1 only if your Mapbox account/request mode allows permanent storage.
