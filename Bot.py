@@ -38,10 +38,10 @@ MAPBOX_PERMANENT = os.getenv("MAPBOX_PERMANENT", "0").strip() == "1"
 DB_PATH = os.getenv("DB_PATH", "bot_learning.sqlite3").strip()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
-CITY_UA = "Кривий Ріг"
-CITY_RU = "Кривой Рог"
-COUNTRY_UA = "Україна"
-COUNTRY_RU = "Украина"
+CITY_UA = "ÐÑÐ¸Ð²Ð¸Ð¹ Ð ÑÐ³"
+CITY_RU = "ÐÑÐ¸Ð²Ð¾Ð¹ Ð Ð¾Ð³"
+COUNTRY_UA = "Ð£ÐºÑÐ°ÑÐ½Ð°"
+COUNTRY_RU = "Ð£ÐºÑÐ°Ð¸Ð½Ð°"
 COUNTRY_CODE = "UA"
 
 # Approximate city bounds. Used only as a sanity check, not as the geocoder itself.
@@ -78,20 +78,20 @@ if OPENAI_API_KEY:
 
 # Small seed list. The database can learn more aliases with /alias.
 SEED_ALIASES = {
-    "одоєвського": ["одоевского", "одоевського", "одоєвского"],
-    "одоевского": ["одоєвського", "одоевського", "одоєвского"],
-    "волгоградська": ["волгоградская"],
-    "волгоградская": ["волгоградська"],
-    "дзержинського": ["дзержинского"],
-    "дзержинского": ["дзержинського"],
+    "Ð¾Ð´Ð¾ÑÐ²ÑÑÐºÐ¾Ð³Ð¾": ["Ð¾Ð´Ð¾ÐµÐ²ÑÐºÐ¾Ð³Ð¾", "Ð¾Ð´Ð¾ÐµÐ²ÑÑÐºÐ¾Ð³Ð¾", "Ð¾Ð´Ð¾ÑÐ²ÑÐºÐ¾Ð³Ð¾"],
+    "Ð¾Ð´Ð¾ÐµÐ²ÑÐºÐ¾Ð³Ð¾": ["Ð¾Ð´Ð¾ÑÐ²ÑÑÐºÐ¾Ð³Ð¾", "Ð¾Ð´Ð¾ÐµÐ²ÑÑÐºÐ¾Ð³Ð¾", "Ð¾Ð´Ð¾ÑÐ²ÑÐºÐ¾Ð³Ð¾"],
+    "Ð²Ð¾Ð»Ð³Ð¾Ð³ÑÐ°Ð´ÑÑÐºÐ°": ["Ð²Ð¾Ð»Ð³Ð¾Ð³ÑÐ°Ð´ÑÐºÐ°Ñ"],
+    "Ð²Ð¾Ð»Ð³Ð¾Ð³ÑÐ°Ð´ÑÐºÐ°Ñ": ["Ð²Ð¾Ð»Ð³Ð¾Ð³ÑÐ°Ð´ÑÑÐºÐ°"],
+    "Ð´Ð·ÐµÑÐ¶Ð¸Ð½ÑÑÐºÐ¾Ð³Ð¾": ["Ð´Ð·ÐµÑÐ¶Ð¸Ð½ÑÐºÐ¾Ð³Ð¾"],
+    "Ð´Ð·ÐµÑÐ¶Ð¸Ð½ÑÐºÐ¾Ð³Ð¾": ["Ð´Ð·ÐµÑÐ¶Ð¸Ð½ÑÑÐºÐ¾Ð³Ð¾"],
 }
 
 ADDRESS_RE = re.compile(
-    r"(?iu)^\s*(?:вул(?:иця)?\.?|ул(?:ица)?\.?|просп(?:ект)?\.?|пр-т\.?|"
-    r"пров(?:улок)?\.?|пер(?:еулок)?\.?|бул(?:ьвар)?\.?|б-р\.?|"
-    r"пл(?:ощадь|оща)?\.?|шосе|шоссе)?\s*"
-    r"(?P<street>[\wА-Яа-яЁёІіЇїЄєҐґ'’\-\.\s]{2,80}?)"
-    r"\s*[,№#]?\s*(?P<house>\d{1,4}[\wА-Яа-яІіЇїЄєA-Za-z\-/]{0,8})\s*$"
+    r"(?iu)^\s*(?:Ð²ÑÐ»(?:Ð¸ÑÑ)?\.?|ÑÐ»(?:Ð¸ÑÐ°)?\.?|Ð¿ÑÐ¾ÑÐ¿(?:ÐµÐºÑ)?\.?|Ð¿Ñ-Ñ\.?|"
+    r"Ð¿ÑÐ¾Ð²(?:ÑÐ»Ð¾Ðº)?\.?|Ð¿ÐµÑ(?:ÐµÑÐ»Ð¾Ðº)?\.?|Ð±ÑÐ»(?:ÑÐ²Ð°Ñ)?\.?|Ð±-Ñ\.?|"
+    r"Ð¿Ð»(?:Ð¾ÑÐ°Ð´Ñ|Ð¾ÑÐ°)?\.?|ÑÐ¾ÑÐµ|ÑÐ¾ÑÑÐµ)?\s*"
+    r"(?P<street>[\wÐ-Ð¯Ð°-ÑÐÑÐÑÐÑÐÑÒÒ'â\-\.\s]{2,80}?)"
+    r"\s*[,â#]?\s*(?P<house>\d{1,4}[\wÐ-Ð¯Ð°-ÑÐÑÐÑÐÑA-Za-z\-/]{0,8})\s*$"
 )
 
 # ============================================================
@@ -199,9 +199,9 @@ def init_db() -> None:
 
 def normalize_text(s: str) -> str:
     s = unicodedata.normalize("NFKC", s or "")
-    s = s.lower().replace("’", "'").replace("`", "'")
-    s = s.replace("ё", "е")
-    s = re.sub(r"[^0-9a-zа-яіїєґ'\-\s]", " ", s, flags=re.I)
+    s = s.lower().replace("â", "'").replace("`", "'")
+    s = s.replace("Ñ", "Ðµ")
+    s = re.sub(r"[^0-9a-zÐ°-ÑÑÑÑÒ'\-\s]", " ", s, flags=re.I)
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
@@ -217,7 +217,7 @@ def query_key(street: str, house: str) -> str:
 def canonical_street(street: str) -> str:
     x = normalize_text(street)
     x = re.sub(
-        r"^(вулиця|вул|улица|ул|проспект|просп|пр т|провулок|пров|переулок|пер|бульвар|бул|площа|площадь)\s+",
+        r"^(Ð²ÑÐ»Ð¸ÑÑ|Ð²ÑÐ»|ÑÐ»Ð¸ÑÐ°|ÑÐ»|Ð¿ÑÐ¾ÑÐ¿ÐµÐºÑ|Ð¿ÑÐ¾ÑÐ¿|Ð¿Ñ Ñ|Ð¿ÑÐ¾Ð²ÑÐ»Ð¾Ðº|Ð¿ÑÐ¾Ð²|Ð¿ÐµÑÐµÑÐ»Ð¾Ðº|Ð¿ÐµÑ|Ð±ÑÐ»ÑÐ²Ð°Ñ|Ð±ÑÐ»|Ð¿Ð»Ð¾ÑÐ°|Ð¿Ð»Ð¾ÑÐ°Ð´Ñ)\s+",
         "",
         x,
     )
@@ -365,7 +365,7 @@ def parse_address(text: str) -> Optional[ParsedAddress]:
 
     # Remove explicit city suffix if user wrote it.
     x = re.sub(
-        r"(?iu),?\s*(?:м\.?\s*)?(?:кривий\s+ріг|кривой\s+рог)(?:,?\s*(?:україна|украина))?\s*$",
+        r"(?iu),?\s*(?:Ð¼\.?\s*)?(?:ÐºÑÐ¸Ð²Ð¸Ð¹\s+ÑÑÐ³|ÐºÑÐ¸Ð²Ð¾Ð¹\s+ÑÐ¾Ð³)(?:,?\s*(?:ÑÐºÑÐ°ÑÐ½Ð°|ÑÐºÑÐ°Ð¸Ð½Ð°))?\s*$",
         "",
         x,
     ).strip(" ,")
@@ -449,11 +449,11 @@ def score_candidate(parsed: ParsedAddress, c: Candidate) -> float:
     score += 32 * sim
 
     city_norm = normalize_text(c.city + " " + c.display)
-    if "кривий ріг" in city_norm or "кривой рог" in city_norm:
+    if "ÐºÑÐ¸Ð²Ð¸Ð¹ ÑÑÐ³" in city_norm or "ÐºÑÐ¸Ð²Ð¾Ð¹ ÑÐ¾Ð³" in city_norm:
         score += 15
 
     acc = normalize_text(c.accuracy)
-    if any(x in acc for x in ("rooftop", "building", "house", "address", "точна", "точный")):
+    if any(x in acc for x in ("rooftop", "building", "house", "address", "ÑÐ¾ÑÐ½Ð°", "ÑÐ¾ÑÐ½ÑÐ¹")):
         score += 14
     if any(x in acc for x in ("interpol", "street", "approx")):
         score -= 4
@@ -741,7 +741,7 @@ You are given candidate coordinates returned by Google, Visicom, Mapbox, OpenStr
 Your job is ONLY to choose among those candidates. NEVER invent coordinates, change coordinates, or return a candidate index outside the list.
 
 Check all of these:
-1. exact house number, including suffix/ корпус-like forms;
+1. exact house number, including suffix/ ÐºÐ¾ÑÐ¿ÑÑ-like forms;
 2. street identity despite Ukrainian/Russian spelling, transliteration and learned/old-name variants;
 3. candidate belongs to Kryvyi Rih, Ukraine;
 4. house/building/rooftop-level precision is stronger than street/interpolated precision;
@@ -794,13 +794,13 @@ Candidates:
 
 async def choose_best(parsed: ParsedAddress, candidates: list[Candidate]) -> tuple[Optional[Candidate], float, str]:
     if not candidates:
-        return None, 0.0, "Нет кандидатов"
+        return None, 0.0, "ÐÐµÑ ÐºÐ°Ð½Ð´Ð¸Ð´Ð°ÑÐ¾Ð²"
 
     deterministic = candidates[0]
 
     # If a user-confirmed result exists with strong confidence, no need to spend AI every time.
     if deterministic.source == "learned" and deterministic.score >= 110:
-        return deterministic, deterministic.provider_confidence, "Ранее подтверждено пользователем"
+        return deterministic, deterministic.provider_confidence, "Ð Ð°Ð½ÐµÐµ Ð¿Ð¾Ð´ÑÐ²ÐµÑÐ¶Ð´ÐµÐ½Ð¾ Ð¿Ð¾Ð»ÑÐ·Ð¾Ð²Ð°ÑÐµÐ»ÐµÐ¼"
 
     ai = await ai_choose(parsed, candidates)
     if ai and ai.get("found"):
@@ -809,15 +809,15 @@ async def choose_best(parsed: ParsedAddress, candidates: list[Candidate]) -> tup
         conf = ai["confidence"]
         # Final programmatic guard: AI can select only a real in-bounds candidate.
         if in_city_bounds(chosen.lat, chosen.lon) and conf >= MIN_AI_CONFIDENCE:
-            return chosen, conf, str(ai.get("reason") or "ИИ проверил кандидатов")[:300]
+            return chosen, conf, str(ai.get("reason") or "ÐÐ Ð¿ÑÐ¾Ð²ÐµÑÐ¸Ð» ÐºÐ°Ð½Ð´Ð¸Ð´Ð°ÑÐ¾Ð²")[:300]
 
     # Deterministic fallback if AI unavailable or uncertain.
     if deterministic.score >= MIN_FINAL_SCORE:
         # Translate score to a rough 0..1 confidence for display only.
         conf = max(0.45, min(0.95, 0.45 + deterministic.score / 180.0))
-        return deterministic, conf, "Выбран по совпадению адреса и согласованию геокодеров"
+        return deterministic, conf, "ÐÑÐ±ÑÐ°Ð½ Ð¿Ð¾ ÑÐ¾Ð²Ð¿Ð°Ð´ÐµÐ½Ð¸Ñ Ð°Ð´ÑÐµÑÐ° Ð¸ ÑÐ¾Ð³Ð»Ð°ÑÐ¾Ð²Ð°Ð½Ð¸Ñ Ð³ÐµÐ¾ÐºÐ¾Ð´ÐµÑÐ¾Ð²"
 
-    return None, 0.0, "Недостаточно надежное совпадение"
+    return None, 0.0, "ÐÐµÐ´Ð¾ÑÑÐ°ÑÐ¾ÑÐ½Ð¾ Ð½Ð°Ð´ÐµÐ¶Ð½Ð¾Ðµ ÑÐ¾Ð²Ð¿Ð°Ð´ÐµÐ½Ð¸Ðµ"
 
 
 # ============================================================
@@ -862,7 +862,7 @@ async def resolve_address(parsed: ParsedAddress) -> tuple[Optional[Candidate], f
     now = time.time()
     cached = memory_cache.get(key)
     if cached and now - cached[0] <= CACHE_TTL_SECONDS:
-        return cached[1], cached[2], "Кэш: " + cached[3]
+        return cached[1], cached[2], "ÐÑÑ: " + cached[3]
 
     if key in inflight:
         return await inflight[key]
@@ -889,14 +889,14 @@ async def resolve_address(parsed: ParsedAddress) -> tuple[Optional[Candidate], f
 # ============================================================
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "Пришли адрес в Кривом Роге, например: Одоевского 45\n"
-        "Я проверю Google + Visicom + Mapbox + OpenStreetMap и выберу наиболее надежную точку.\n\n"
-        "Обучение: /yes, /no, /teach, /alias"
+        "ÐÑÐ¸ÑÐ»Ð¸ Ð°Ð´ÑÐµÑ Ð² ÐÑÐ¸Ð²Ð¾Ð¼ Ð Ð¾Ð³Ðµ, Ð½Ð°Ð¿ÑÐ¸Ð¼ÐµÑ: ÐÐ´Ð¾ÐµÐ²ÑÐºÐ¾Ð³Ð¾ 45\n"
+        "Ð¯ Ð¿ÑÐ¾Ð²ÐµÑÑ Google + Visicom + Mapbox + OpenStreetMap Ð¸ Ð²ÑÐ±ÐµÑÑ Ð½Ð°Ð¸Ð±Ð¾Ð»ÐµÐµ Ð½Ð°Ð´ÐµÐ¶Ð½ÑÑ ÑÐ¾ÑÐºÑ.\n\n"
+        "ÐÐ±ÑÑÐµÐ½Ð¸Ðµ: /yes, /no, /teach, /alias"
     )
 
 
 async def cache_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f"В быстром кэше: {len(memory_cache)} адресов")
+    await update.message.reply_text(f"Ð Ð±ÑÑÑÑÐ¾Ð¼ ÐºÑÑÐµ: {len(memory_cache)} Ð°Ð´ÑÐµÑÐ¾Ð²")
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -906,66 +906,66 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         rows = conn.execute("SELECT * FROM provider_stats ORDER BY provider").fetchall()
         learned = conn.execute("SELECT COUNT(*) n FROM confirmed_addresses").fetchone()["n"]
         aliases = conn.execute("SELECT COUNT(*) n FROM street_aliases").fetchone()["n"]
-    text = [f"Подтвержденных адресов: {learned}", f"Обученных алиасов: {aliases}"]
+    text = [f"ÐÐ¾Ð´ÑÐ²ÐµÑÐ¶Ð´ÐµÐ½Ð½ÑÑ Ð°Ð´ÑÐµÑÐ¾Ð²: {learned}", f"ÐÐ±ÑÑÐµÐ½Ð½ÑÑ Ð°Ð»Ð¸Ð°ÑÐ¾Ð²: {aliases}"]
     for r in rows:
-        text.append(f"{r['provider']}: ✅ {r['good']} / ❌ {r['bad']}")
+        text.append(f"{r['provider']}: â {r['good']} / â {r['bad']}")
     await update.message.reply_text("\n".join(text))
 
 
 async def yes_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user or not can_train(user.id):
-        await update.message.reply_text("У тебя нет доступа к обучению бота.")
+        await update.message.reply_text("Ð£ ÑÐµÐ±Ñ Ð½ÐµÑ Ð´Ð¾ÑÑÑÐ¿Ð° Ðº Ð¾Ð±ÑÑÐµÐ½Ð¸Ñ Ð±Ð¾ÑÐ°.")
         return
     last = last_result_by_user.get(user.id)
     if not last:
-        await update.message.reply_text("Сначала отправь адрес и получи точку.")
+        await update.message.reply_text("Ð¡Ð½Ð°ÑÐ°Ð»Ð° Ð¾ÑÐ¿ÑÐ°Ð²Ñ Ð°Ð´ÑÐµÑ Ð¸ Ð¿Ð¾Ð»ÑÑÐ¸ ÑÐ¾ÑÐºÑ.")
         return
     parsed, c = last
     save_confirmed(parsed, c)
-    await update.message.reply_text("✅ Запомнил этот адрес как правильный. В следующий раз он получит больший приоритет.")
+    await update.message.reply_text("â ÐÐ°Ð¿Ð¾Ð¼Ð½Ð¸Ð» ÑÑÐ¾Ñ Ð°Ð´ÑÐµÑ ÐºÐ°Ðº Ð¿ÑÐ°Ð²Ð¸Ð»ÑÐ½ÑÐ¹. Ð ÑÐ»ÐµÐ´ÑÑÑÐ¸Ð¹ ÑÐ°Ð· Ð¾Ð½ Ð¿Ð¾Ð»ÑÑÐ¸Ñ Ð±Ð¾Ð»ÑÑÐ¸Ð¹ Ð¿ÑÐ¸Ð¾ÑÐ¸ÑÐµÑ.")
 
 
 async def no_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user or not can_train(user.id):
-        await update.message.reply_text("У тебя нет доступа к обучению бота.")
+        await update.message.reply_text("Ð£ ÑÐµÐ±Ñ Ð½ÐµÑ Ð´Ð¾ÑÑÑÐ¿Ð° Ðº Ð¾Ð±ÑÑÐµÐ½Ð¸Ñ Ð±Ð¾ÑÐ°.")
         return
     last = last_result_by_user.get(user.id)
     if not last:
-        await update.message.reply_text("Сначала отправь адрес и получи точку.")
+        await update.message.reply_text("Ð¡Ð½Ð°ÑÐ°Ð»Ð° Ð¾ÑÐ¿ÑÐ°Ð²Ñ Ð°Ð´ÑÐµÑ Ð¸ Ð¿Ð¾Ð»ÑÑÐ¸ ÑÐ¾ÑÐºÑ.")
         return
     parsed, c = last
     save_rejected(parsed, c)
     memory_cache.pop(query_key(parsed.street, parsed.house), None)
     await update.message.reply_text(
-        "❌ Пометил результат как неправильный.\n"
-        "Чтобы записать правильную точку:\n"
-        "/teach Улица 45 | 47.123456 | 33.123456"
+        "â ÐÐ¾Ð¼ÐµÑÐ¸Ð» ÑÐµÐ·ÑÐ»ÑÑÐ°Ñ ÐºÐ°Ðº Ð½ÐµÐ¿ÑÐ°Ð²Ð¸Ð»ÑÐ½ÑÐ¹.\n"
+        "Ð§ÑÐ¾Ð±Ñ Ð·Ð°Ð¿Ð¸ÑÐ°ÑÑ Ð¿ÑÐ°Ð²Ð¸Ð»ÑÐ½ÑÑ ÑÐ¾ÑÐºÑ:\n"
+        "/teach Ð£Ð»Ð¸ÑÐ° 45 | 47.123456 | 33.123456"
     )
 
 
 async def teach_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user or not can_train(user.id):
-        await update.message.reply_text("У тебя нет доступа к обучению бота.")
+        await update.message.reply_text("Ð£ ÑÐµÐ±Ñ Ð½ÐµÑ Ð´Ð¾ÑÑÑÐ¿Ð° Ðº Ð¾Ð±ÑÑÐµÐ½Ð¸Ñ Ð±Ð¾ÑÐ°.")
         return
     raw = " ".join(context.args).strip()
     parts = [x.strip() for x in raw.split("|")]
     if len(parts) != 3:
-        await update.message.reply_text("Формат: /teach Одоевского 45 | 47.123456 | 33.123456")
+        await update.message.reply_text("Ð¤Ð¾ÑÐ¼Ð°Ñ: /teach ÐÐ´Ð¾ÐµÐ²ÑÐºÐ¾Ð³Ð¾ 45 | 47.123456 | 33.123456")
         return
     parsed = parse_address(parts[0])
     if not parsed:
-        await update.message.reply_text("Не понял адрес. Нужны улица и номер дома.")
+        await update.message.reply_text("ÐÐµ Ð¿Ð¾Ð½ÑÐ» Ð°Ð´ÑÐµÑ. ÐÑÐ¶Ð½Ñ ÑÐ»Ð¸ÑÐ° Ð¸ Ð½Ð¾Ð¼ÐµÑ Ð´Ð¾Ð¼Ð°.")
         return
     try:
         lat, lon = float(parts[1].replace(",", ".")), float(parts[2].replace(",", "."))
     except ValueError:
-        await update.message.reply_text("Координаты должны быть числами.")
+        await update.message.reply_text("ÐÐ¾Ð¾ÑÐ´Ð¸Ð½Ð°ÑÑ Ð´Ð¾Ð»Ð¶Ð½Ñ Ð±ÑÑÑ ÑÐ¸ÑÐ»Ð°Ð¼Ð¸.")
         return
     if not in_city_bounds(lat, lon):
-        await update.message.reply_text("Эта точка вне допустимой области Кривого Рога. Не сохраняю.")
+        await update.message.reply_text("Ð­ÑÐ° ÑÐ¾ÑÐºÐ° Ð²Ð½Ðµ Ð´Ð¾Ð¿ÑÑÑÐ¸Ð¼Ð¾Ð¹ Ð¾Ð±Ð»Ð°ÑÑÐ¸ ÐÑÐ¸Ð²Ð¾Ð³Ð¾ Ð Ð¾Ð³Ð°. ÐÐµ ÑÐ¾ÑÑÐ°Ð½ÑÑ.")
         return
     c = Candidate(
         source="learned",
@@ -980,25 +980,25 @@ async def teach_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         score=130.0,
     )
     save_confirmed(parsed, c)
-    memory_cache[query_key(parsed.street, parsed.house)] = (time.time(), c, 0.99, "Ручное обучение")
+    memory_cache[query_key(parsed.street, parsed.house)] = (time.time(), c, 0.99, "Ð ÑÑÐ½Ð¾Ðµ Ð¾Ð±ÑÑÐµÐ½Ð¸Ðµ")
     await update.message.reply_location(latitude=lat, longitude=lon)
-    await update.message.reply_text("🧠 Сохранил правильную точку как обучающий пример.")
+    await update.message.reply_text("ð§  Ð¡Ð¾ÑÑÐ°Ð½Ð¸Ð» Ð¿ÑÐ°Ð²Ð¸Ð»ÑÐ½ÑÑ ÑÐ¾ÑÐºÑ ÐºÐ°Ðº Ð¾Ð±ÑÑÐ°ÑÑÐ¸Ð¹ Ð¿ÑÐ¸Ð¼ÐµÑ.")
 
 
 async def alias_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user or not can_train(user.id):
-        await update.message.reply_text("У тебя нет доступа к обучению бота.")
+        await update.message.reply_text("Ð£ ÑÐµÐ±Ñ Ð½ÐµÑ Ð´Ð¾ÑÑÑÐ¿Ð° Ðº Ð¾Ð±ÑÑÐµÐ½Ð¸Ñ Ð±Ð¾ÑÐ°.")
         return
     raw = " ".join(context.args).strip()
     parts = [x.strip() for x in raw.split("|")]
     if len(parts) != 2 or not all(parts):
-        await update.message.reply_text("Формат: /alias старое название | новое название")
+        await update.message.reply_text("Ð¤Ð¾ÑÐ¼Ð°Ñ: /alias ÑÑÐ°ÑÐ¾Ðµ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸Ðµ | Ð½Ð¾Ð²Ð¾Ðµ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸Ðµ")
         return
     save_alias(parts[0], parts[1])
     # Also save reverse relation to make matching symmetric.
     save_alias(parts[1], parts[1])
-    await update.message.reply_text(f"🧠 Запомнил: «{parts[0]}» = «{parts[1]}»")
+    await update.message.reply_text(f"ð§  ÐÐ°Ð¿Ð¾Ð¼Ð½Ð¸Ð»: Â«{parts[0]}Â» = Â«{parts[1]}Â»")
 
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1011,7 +1011,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     chosen, confidence, reason = await resolve_address(parsed)
     if not chosen:
         await update.message.reply_text(
-            f"Не смог надежно подтвердить адрес: {parsed.street} {parsed.house}."
+            f"ÐÐµ ÑÐ¼Ð¾Ð³ Ð½Ð°Ð´ÐµÐ¶Ð½Ð¾ Ð¿Ð¾Ð´ÑÐ²ÐµÑÐ´Ð¸ÑÑ Ð°Ð´ÑÐµÑ: {parsed.street} {parsed.house}."
         )
         return
 
@@ -1023,9 +1023,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     maps_url = f"https://www.google.com/maps?q={chosen.lat:.7f},{chosen.lon:.7f}"
     pct = int(round(confidence * 100))
     await update.message.reply_text(
-        f"📍 {chosen.display or parsed.original}\n"
-        f"Источник: {chosen.source}\n"
-        f"Проверка: {pct}%\n"
+        f"ð {chosen.display or parsed.original}\n"
+        f"ÐÑÑÐ¾ÑÐ½Ð¸Ðº: {chosen.source}\n"
+        f"ÐÑÐ¾Ð²ÐµÑÐºÐ°: {pct}%\n"
         f"{reason}\n"
         f"{maps_url}"
     )
