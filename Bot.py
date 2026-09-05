@@ -19,13 +19,13 @@ from telegram.ext import (
 # НАСТРОЙКИ
 # ============================================================
 
-BOT_TOKEN = os.getenv("8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds", "").strip()
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds").strip()
 
 # Visicom API key
-VISICOM_KEY = os.getenv("e14865d659080719d865805b00e967e6", "").strip()
+VISICOM_KEY = os.getenv("VISICOM_KEY", "e14865d659080719d865805b00e967e6").strip()
 
 # Mapbox access token
-MAPBOX_TOKEN = os.getenv("pk.eyJ1IjoibXlha2lzaDEiLCJhIjoiY210bnFscjVtMGd0NzJ3cjM5Y3Z6anJrciJ9.nHWBCkwZk2fLsHp1cFsjpg", "").strip()
+MAPBOX_TOKEN = os.getenv("MAPBOX_TOKEN", "pk.eyJ1IjoibXlha2lzaDEiLCJhIjoiY210bnFscjVtMGd0NzJ3cjM5Y3Z6anJrciJ9.nHWBCkwZk2fLsHp1cFsjpg").strip()
 
 # Кривой Рог
 CITY_RU = "Кривой Рог"
