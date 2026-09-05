@@ -1,6 +1,7 @@
 import re
 import html
 import math
+import time
 import requests
 from telegram import Update
 from telegram.ext import (
@@ -13,39 +14,54 @@ from telegram.ext import (
 # НАСТРОЙКИ
 # ============================================================
 TELEGRAM_TOKEN = "8055606612:AAGwAykeVxHwUwHCyw-ECgSMcdVuZHY6Vds"
-# Visicom
 VISICOM_API_KEY = "e14865d659080719d865805b00e967e6"
-# Mapbox
-# Если пока нет ключа — оставь пустым ""
+# Можно оставить пустым.
+# Если есть Mapbox token — поиск станет лучше.
 MAPBOX_TOKEN = "pk.eyJ1IjoibXlha2lzaDEiLCJhIjoiY210bnFscjVtMGd0NzJ3cjM5Y3Z6anJrciJ9.nHWBCkwZk2fLsHp1cFsjpg"
 CITY_RU = "Кривой Рог"
 CITY_UA = "Кривий Ріг"
-# Координаты Кривого Рога.
-# Используются как дополнительная защита от результатов
-# из другого города.
-CITY_LAT = 47.91
-CITY_LON = 33.39
-# Максимальное расстояние от центра Кривого Рога,
-# после которого результат считается подозрительным.
-MAX_CITY_DISTANCE_KM = 45
+COUNTRY = "Украина"
+# Центр Кривого Рога
+CITY_LAT = 47.9105
+CITY_LON = 33.3918
+# Не принимать результаты совсем далеко от города
+MAX_CITY_DISTANCE_KM = 60
 # ============================================================
-# VISICOM
+# API
 # ============================================================
 VISICOM_URL = (
     "https://api.visicom.ua/data-api/5.0/uk/geocode.json"
 )
-# ============================================================
-# MAPBOX
-# ============================================================
 MAPBOX_URL = (
     "https://api.mapbox.com/search/geocode/v6/forward"
 )
-# ============================================================
-# OSM
-# ============================================================
 OSM_URL = (
     "https://nominatim.openstreetmap.org/search"
 )
+# ============================================================
+# СИНОНИМЫ ТИПОВ УЛИЦ
+# ============================================================
+STREET_WORDS = [
+    "улица",
+    "ул",
+    "вулиця",
+    "вул",
+    "проспект",
+    "просп",
+    "переулок",
+    "пер",
+    "провулок",
+    "пров",
+    "бульвар",
+    "бул",
+    "площадь",
+    "пл",
+    "площа",
+    "шоссе",
+    "ш",
+    "набережная",
+    "наб"
+]
 # ============================================================
 # НОРМАЛИЗАЦИЯ
 # ============================================================
@@ -53,52 +69,65 @@ def normalize(text):
     text = text.lower().strip()
     text = text.replace("ё", "е")
     text = text.replace("ґ", "г")
-    replacements = [
-        "улица ",
-        "ул. ",
-        "ул ",
-        "вулиця ",
-        "вул. ",
-        "вул ",
-        "проспект ",
-        "просп. ",
-        "просп ",
-        "переулок ",
-        "пер. ",
-        "пер ",
-        "провулок ",
-        "пров. ",
-        "пров ",
-        "бульвар ",
-        "бул. ",
-        "бул ",
-        "площадь ",
-        "пл. ",
-        "пл ",
-        "шоссе ",
-        "ш. ",
-        "ш "
-    ]
-    for item in replacements:
-        text = text.replace(item, "")
-    text = re.sub(r"[.,;:]+", " ", text)
-    text = re.sub(r"\s+", " ", text)
+    text = text.replace("’", "'")
+    text = text.replace("`", "'")
+    # Убираем тип улицы
+    for word in STREET_WORDS:
+        text = re.sub(
+            rf"\b{re.escape(word)}\.?\b",
+            " ",
+            text
+        )
+    text = re.sub(
+        r"[.,;:]+",
+        " ",
+        text
+    )
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
     return text.strip()
 # ============================================================
-# ИЗВЛЕЧЕНИЕ НОМЕРА ДОМА
+# НОРМАЛИЗАЦИЯ НОМЕРА ДОМА
+# ============================================================
+def normalize_house(house):
+    if not house:
+        return ""
+    house = house.lower()
+    house = house.replace(
+        " ",
+        ""
+    )
+    house = house.replace(
+        "а",
+        "а"
+    )
+    return house
+# ============================================================
+# НОМЕР ДОМА
 # ============================================================
 def extract_house(text):
-    text = text.lower()
+    # Поддерживает:
+    #
+    # 12
+    # 12а
+    # 12-А
+    # 12/1
+    # 12-а/1
     patterns = [
-        r"\b(\d+\s*[а-яa-zіїєґ]?(?:[-/]\s*\d+\s*[а-яa-zіїєґ]?)?)\b"
+        r"\b\d+\s*[а-яa-zіїєґ]?\s*"
+        r"(?:[/\-]\s*\d+\s*[а-яa-zіїєґ]?)?\b"
     ]
     for pattern in patterns:
-        match = re.search(pattern, text)
+        match = re.search(
+            pattern,
+            text.lower()
+        )
         if match:
-            return re.sub(
-                r"\s+",
-                "",
-                match.group(1)
+            return normalize_house(
+                match.group(0)
             )
     return None
 # ============================================================
@@ -106,57 +135,74 @@ def extract_house(text):
 # ============================================================
 def parse_address(text):
     text = text.strip()
+    if len(text) < 3:
+        return None
     house = extract_house(text)
     if not house:
         return None
-    # Удаляем номер дома
+    # Убираем номер дома
     street = re.sub(
         r"\b" + re.escape(house) + r"\b",
-        "",
+        " ",
         text,
         flags=re.IGNORECASE
     )
-    street = normalize(street)
+    street = normalize(
+        street
+    )
     if len(street) < 2:
-        return None
-    # Не принимаем обычные предложения
-    bad_words = [
-        "привет",
-        "здравствуйте",
-        "спасибо",
-        "пожалуйста",
-        "машина",
-        "машину",
-        "машины",
-        "кто",
-        "что",
-        "почему",
-        "зачем",
-        "можно",
-        "нужно",
-        "сейчас",
-        "там",
-        "здесь",
-        "ребята"
-    ]
-    if any(
-        word in street.split()
-        for word in bad_words
-    ):
         return None
     return {
         "street": street,
         "house": house
     }
 # ============================================================
-# РАССТОЯНИЕ МЕЖДУ КООРДИНАТАМИ
+# РАЗНЫЕ ВАРИАНТЫ АДРЕСА
 # ============================================================
-def distance_m(lat1, lon1, lat2, lon2):
+def address_variants(
+    street,
+    house
+):
+    variants = []
+    variants.append(
+        f"{CITY_UA}, {street}, {house}"
+    )
+    variants.append(
+        f"{CITY_RU}, {street}, {house}"
+    )
+    variants.append(
+        f"{street}, {house}, {CITY_UA}"
+    )
+    variants.append(
+        f"{street} {house}, {CITY_RU}"
+    )
+    variants.append(
+        f"{street} {house}"
+    )
+    # Убираем дубли
+    unique = []
+    for item in variants:
+        if item not in unique:
+            unique.append(item)
+    return unique
+# ============================================================
+# РАССТОЯНИЕ
+# ============================================================
+def distance_m(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+):
     R = 6371000
     p1 = math.radians(lat1)
     p2 = math.radians(lat2)
-    dp = math.radians(lat2 - lat1)
-    dl = math.radians(lon2 - lon1)
+    dp = math.radians(
+        lat2 - lat1
+    )
+    dl = math.radians(
+        lon2 - lon1
+    )
     a = (
         math.sin(dp / 2) ** 2
         +
@@ -173,419 +219,552 @@ def distance_m(lat1, lon1, lat2, lon2):
         )
     )
 # ============================================================
-# ПРОВЕРКА, ЧТО КООРДИНАТЫ РЯДОМ С КРИВЫМ РОГОМ
+# ПРОВЕРКА ГОРОДА
 # ============================================================
-def is_inside_kryvyi_rih(lat, lon):
-    distance = distance_m(
+def city_distance(
+    lat,
+    lon
+):
+    return distance_m(
         CITY_LAT,
         CITY_LON,
         lat,
         lon
     )
-    return distance <= MAX_CITY_DISTANCE_KM * 1000
+def is_reasonable_location(
+    lat,
+    lon
+):
+    return (
+        city_distance(
+            lat,
+            lon
+        )
+        <= MAX_CITY_DISTANCE_KM * 1000
+    )
+# ============================================================
+# ПРОВЕРКА НАЗВАНИЯ
+# ============================================================
+def text_contains_street(
+    result_text,
+    street
+):
+    if not result_text:
+        return False
+    a = normalize(
+        result_text
+    )
+    b = normalize(
+        street
+    )
+    if not b:
+        return False
+    # Полное совпадение
+    if b in a:
+        return True
+    # Слова улицы
+    street_words = b.split()
+    if len(street_words) == 1:
+        return street_words[0] in a
+    # Все слова должны присутствовать
+    return all(
+        word in a
+        for word in street_words
+    )
+# ============================================================
+# ПРОВЕРКА НОМЕРА
+# ============================================================
+def text_contains_house(
+    result_text,
+    house
+):
+    if not result_text:
+        return False
+    result_text = result_text.lower()
+    house = normalize_house(
+        house
+    )
+    # Ищем именно номер как отдельную часть
+    pattern = (
+        r"(?<!\d)"
+        + re.escape(house)
+        + r"(?!\d)"
+    )
+    return bool(
+        re.search(
+            pattern,
+            result_text
+        )
+    )
 # ============================================================
 # VISICOM
 # ============================================================
-def search_visicom(street, house):
-    params = {
-        "categories": "adr_address",
-        "text": f"{CITY_UA}, {street}, {house}",
-        "country": "UA",
-        "limit": 10,
-        "key": VISICOM_API_KEY
-    }
-    try:
-        response = requests.get(
-            VISICOM_URL,
-            params=params,
-            timeout=10
-        )
-        response.raise_for_status()
-        data = response.json()
-        results = []
-        for feature in data.get(
-            "features",
-            []
-        ):
-            properties = feature.get(
-                "properties",
-                {}
+def search_visicom(
+    street,
+    house
+):
+    results = []
+    variants = address_variants(
+        street,
+        house
+    )
+    for query in variants:
+        params = {
+            "categories": "adr_address",
+            "text": query,
+            "country": "UA",
+            "limit": 10,
+            "key": VISICOM_API_KEY
+        }
+        try:
+            response = requests.get(
+                VISICOM_URL,
+                params=params,
+                timeout=10
             )
-            centroid = (
-                properties.get(
-                    "geo_centroid"
-                )
-                or feature.get(
-                    "geo_centroid"
-                )
-            )
-            if not centroid:
-                continue
-            if isinstance(
-                centroid,
-                list
+            response.raise_for_status()
+            data = response.json()
+            for feature in data.get(
+                "features",
+                []
             ):
-                if len(centroid) < 2:
+                properties = (
+                    feature.get(
+                        "properties",
+                        {}
+                    )
+                )
+                centroid = (
+                    properties.get(
+                        "geo_centroid"
+                    )
+                    or feature.get(
+                        "geo_centroid"
+                    )
+                )
+                if not centroid:
                     continue
-                lon = float(
-                    centroid[0]
-                )
-                lat = float(
-                    centroid[1]
-                )
-            elif isinstance(
-                centroid,
-                dict
-            ):
-                coordinates = centroid.get(
-                    "coordinates"
-                )
-                if (
-                    not coordinates
-                    or len(coordinates) < 2
+                if isinstance(
+                    centroid,
+                    list
+                ):
+                    if len(centroid) < 2:
+                        continue
+                    lon = float(
+                        centroid[0]
+                    )
+                    lat = float(
+                        centroid[1]
+                    )
+                elif isinstance(
+                    centroid,
+                    dict
+                ):
+                    coords = (
+                        centroid.get(
+                            "coordinates"
+                        )
+                    )
+                    if (
+                        not coords
+                        or len(coords) < 2
+                    ):
+                        continue
+                    lon = float(
+                        coords[0]
+                    )
+                    lat = float(
+                        coords[1]
+                    )
+                else:
+                    continue
+                if not is_reasonable_location(
+                    lat,
+                    lon
                 ):
                     continue
-                lon = float(
-                    coordinates[0]
+                label = (
+                    properties.get(
+                        "label"
+                    )
+                    or properties.get(
+                        "name"
+                    )
+                    or ""
                 )
-                lat = float(
-                    coordinates[1]
-                )
-            else:
-                continue
-            if not is_inside_kryvyi_rih(
-                lat,
-                lon
-            ):
-                continue
-            label = (
-                properties.get("label")
-                or properties.get("name")
-                or ""
+                score = 5
+                if text_contains_street(
+                    label,
+                    street
+                ):
+                    score += 5
+                if text_contains_house(
+                    label,
+                    house
+                ):
+                    score += 8
+                results.append({
+                    "source": "Visicom",
+                    "lat": lat,
+                    "lon": lon,
+                    "label": label,
+                    "score": score
+                })
+        except Exception as e:
+            print(
+                "VISICOM:",
+                e
             )
-            results.append({
-                "source": "Visicom",
-                "lat": lat,
-                "lon": lon,
-                "label": label,
-                "quality": 3
-            })
-        return results
-    except Exception as e:
-        print(
-            "VISICOM ERROR:",
-            e
-        )
-        return []
+    return results
 # ============================================================
 # MAPBOX
 # ============================================================
-def search_mapbox(street, house):
+def search_mapbox(
+    street,
+    house
+):
     if not MAPBOX_TOKEN:
         return []
-    params = {
-        "address_number": house,
-        "street": street,
-        "place": CITY_RU,
-        "country": "UA",
-        "types": "address",
-        "autocomplete": "false",
-        "limit": 5,
-        "access_token": MAPBOX_TOKEN
-    }
-    try:
-        response = requests.get(
-            MAPBOX_URL,
-            params=params,
-            timeout=10
-        )
-        response.raise_for_status()
-        data = response.json()
-        results = []
-        for feature in data.get(
-            "features",
-            []
-        ):
-            coordinates = (
-                feature
-                .get("geometry", {})
-                .get("coordinates")
+    results = []
+    queries = address_variants(
+        street,
+        house
+    )
+    for query in queries:
+        params = {
+            "q": query,
+            "country": "UA",
+            "types": "address",
+            "limit": 10,
+            "access_token":
+                MAPBOX_TOKEN
+        }
+        try:
+            response = requests.get(
+                MAPBOX_URL,
+                params=params,
+                timeout=10
             )
-            if (
-                not coordinates
-                or len(coordinates) < 2
+            response.raise_for_status()
+            data = response.json()
+            for feature in data.get(
+                "features",
+                []
             ):
-                continue
-            lon = float(
-                coordinates[0]
-            )
-            lat = float(
-                coordinates[1]
-            )
-            if not is_inside_kryvyi_rih(
-                lat,
-                lon
-            ):
-                continue
-            properties = feature.get(
-                "properties",
-                {}
-            )
-            accuracy = properties.get(
-                "accuracy",
-                ""
-            )
-            match_code = properties.get(
-                "match_code",
-                {}
-            )
-            confidence = (
-                match_code.get(
-                    "confidence",
-                    ""
+                coords = (
+                    feature
+                    .get(
+                        "geometry",
+                        {}
+                    )
+                    .get(
+                        "coordinates"
+                    )
                 )
-            )
-            # Оценка качества
-            quality = 3
-            if accuracy == "rooftop":
-                quality = 6
-            elif accuracy == "parcel":
-                quality = 5
-            elif accuracy == "point":
-                quality = 4
-            elif accuracy == "interpolated":
-                quality = 2
-            elif accuracy == "approximate":
-                quality = 0
-            if confidence == "exact":
-                quality += 2
-            elif confidence == "high":
-                quality += 1
-            results.append({
-                "source": "Mapbox",
-                "lat": lat,
-                "lon": lon,
-                "label": feature.get(
-                    "properties",
-                    {}
-                ).get(
-                    "name",
-                    ""
-                ),
-                "quality": quality,
-                "accuracy": accuracy,
-                "confidence": confidence
-            })
-        return results
-    except Exception as e:
-        print(
-            "MAPBOX ERROR:",
-            e
-        )
-        return []
-# ============================================================
-# OPENSTREETMAP
-# ============================================================
-def search_osm(street, house):
-    headers = {
-        "User-Agent":
-            "KryvyiRihTelegramAddressBot/2.0"
-    }
-    params = {
-        "street": f"{street}, {house}",
-        "city": CITY_RU,
-        "country": "Украина",
-        "format": "jsonv2",
-        "addressdetails": 1,
-        "limit": 5
-    }
-    try:
-        response = requests.get(
-            OSM_URL,
-            params=params,
-            headers=headers,
-            timeout=10
-        )
-        response.raise_for_status()
-        data = response.json()
-        results = []
-        for item in data:
-            try:
-                lat = float(
-                    item["lat"]
-                )
-                lon = float(
-                    item["lon"]
-                )
-            except:
-                continue
-            if not is_inside_kryvyi_rih(
-                lat,
-                lon
-            ):
-                continue
-            address_data = item.get(
-                "address",
-                {}
-            )
-            city = (
-                address_data.get("city")
-                or address_data.get("town")
-                or address_data.get("municipality")
-                or ""
-            ).lower()
-            # Если город явно указан,
-            # проверяем его
-            if city:
                 if (
-                    "крив" not in city
-                    and "kryv" not in city
+                    not coords
+                    or len(coords) < 2
                 ):
                     continue
-            display_name = item.get(
-                "display_name",
-                ""
+                lon = float(
+                    coords[0]
+                )
+                lat = float(
+                    coords[1]
+                )
+                if not is_reasonable_location(
+                    lat,
+                    lon
+                ):
+                    continue
+                properties = (
+                    feature.get(
+                        "properties",
+                        {}
+                    )
+                )
+                full_text = (
+                    properties.get(
+                        "full_address"
+                    )
+                    or feature.get(
+                        "place_name"
+                    )
+                    or ""
+                )
+                accuracy = (
+                    properties.get(
+                        "coordinates",
+                        {}
+                    ).get(
+                        "accuracy",
+                        ""
+                    )
+                )
+                score = 5
+                if accuracy == "rooftop":
+                    score += 12
+                elif accuracy == "parcel":
+                    score += 10
+                elif accuracy == "point":
+                    score += 8
+                elif accuracy == "interpolated":
+                    score += 3
+                elif accuracy == "approximate":
+                    score -= 5
+                if text_contains_street(
+                    full_text,
+                    street
+                ):
+                    score += 5
+                if text_contains_house(
+                    full_text,
+                    house
+                ):
+                    score += 8
+                results.append({
+                    "source": "Mapbox",
+                    "lat": lat,
+                    "lon": lon,
+                    "label": full_text,
+                    "accuracy": accuracy,
+                    "score": score
+                })
+        except Exception as e:
+            print(
+                "MAPBOX:",
+                e
             )
-            quality = 3
-            # Если OSM явно считает это адресом
-            if (
-                item.get("type")
-                == "house"
-            ):
-                quality = 5
-            results.append({
-                "source": "OpenStreetMap",
-                "lat": lat,
-                "lon": lon,
-                "label": display_name,
-                "quality": quality
-            })
-        return results
-    except Exception as e:
-        print(
-            "OSM ERROR:",
-            e
-        )
-        return []
+    return results
 # ============================================================
-# ПОИСК КЛАСТЕРОВ
+# OSM
 # ============================================================
-def make_clusters(results):
-    clusters = []
+def search_osm(
+    street,
+    house
+):
+    results = []
+    headers = {
+        "User-Agent":
+            "KryvyiRihAddressBot/3.0"
+    }
+    queries = [
+        f"{street} {house}, "
+        f"{CITY_UA}, Ukraine",
+        f"{street} {house}, "
+        f"{CITY_RU}, Ukraine"
+    ]
+    for query in queries:
+        params = {
+            "q": query,
+            "format": "jsonv2",
+            "addressdetails": 1,
+            "limit": 10
+        }
+        try:
+            response = requests.get(
+                OSM_URL,
+                params=params,
+                headers=headers,
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
+            for item in data:
+                try:
+                    lat = float(
+                        item["lat"]
+                    )
+                    lon = float(
+                        item["lon"]
+                    )
+                except:
+                    continue
+                if not is_reasonable_location(
+                    lat,
+                    lon
+                ):
+                    continue
+                address = item.get(
+                    "address",
+                    {}
+                )
+                full_text = item.get(
+                    "display_name",
+                    ""
+                )
+                score = 4
+                # Реальный объект дома
+                if item.get(
+                    "type"
+                ) == "house":
+                    score += 10
+                if text_contains_street(
+                    full_text,
+                    street
+                ):
+                    score += 5
+                if text_contains_house(
+                    full_text,
+                    house
+                ):
+                    score += 8
+                results.append({
+                    "source":
+                        "OpenStreetMap",
+                    "lat": lat,
+                    "lon": lon,
+                    "label": full_text,
+                    "score": score
+                })
+            # Nominatim требует
+            # не делать частые запросы
+            time.sleep(1)
+        except Exception as e:
+            print(
+                "OSM:",
+                e
+            )
+    return results
+# ============================================================
+# УДАЛЕНИЕ ДУБЛЕЙ
+# ============================================================
+def remove_duplicates(
+    results
+):
+    unique = []
     for result in results:
-        added = False
-        for cluster in clusters:
-            center = cluster[0]
-            distance = distance_m(
+        duplicate = False
+        for old in unique:
+            d = distance_m(
                 result["lat"],
                 result["lon"],
-                center["lat"],
-                center["lon"]
+                old["lat"],
+                old["lon"]
             )
-            # 120 метров.
-            # Результаты в пределах этого расстояния
-            # считаем одним местом.
-            if distance <= 120:
-                cluster.append(
-                    result
-                )
-                added = True
+            if d < 10:
+                # Оставляем лучший результат
+                if (
+                    result["score"]
+                    >
+                    old["score"]
+                ):
+                    unique.remove(
+                        old
+                    )
+                    unique.append(
+                        result
+                    )
+                duplicate = True
                 break
-        if not added:
-            clusters.append(
-                [result]
+        if not duplicate:
+            unique.append(
+                result
             )
-    return clusters
+    return unique
 # ============================================================
-# ВЫБОР ЛУЧШЕГО КЛАСТЕРА
+# ПОИСК ПОДТВЕРЖДЕНИЙ
 # ============================================================
-def choose_best(results):
+def calculate_confirmation(
+    candidate,
+    results
+):
+    confirmation = 0
+    sources = set()
+    for result in results:
+        d = distance_m(
+            candidate["lat"],
+            candidate["lon"],
+            result["lat"],
+            result["lon"]
+        )
+        if d <= 30:
+            sources.add(
+                result["source"]
+            )
+            confirmation += 10
+        elif d <= 100:
+            sources.add(
+                result["source"]
+            )
+            confirmation += 6
+        elif d <= 250:
+            sources.add(
+                result["source"]
+            )
+            confirmation += 3
+    # Бонус за разные источники
+    confirmation += (
+        len(sources) * 8
+    )
+    return (
+        confirmation,
+        sources
+    )
+# ============================================================
+# ВЫБОР ЛУЧШЕГО
+# ============================================================
+def choose_best(
+    results
+):
     if not results:
         return None
-    clusters = make_clusters(
+    results = remove_duplicates(
         results
     )
-    best_cluster = None
-    best_score = -1
-    for cluster in clusters:
-        sources = set(
-            item["source"]
-            for item in cluster
-        )
-        # Количество независимых источников
-        source_count = len(
-            sources
-        )
-        quality_sum = sum(
-            item.get(
-                "quality",
-                0
+    candidates = []
+    for candidate in results:
+        confirmation, sources = (
+            calculate_confirmation(
+                candidate,
+                results
             )
-            for item in cluster
         )
-        # Чем больше источников подтверждают
-        # одну точку — тем лучше.
-        score = (
-            source_count * 10
-            + quality_sum
+        total_score = (
+            candidate["score"]
+            + confirmation
         )
-        # Дополнительный бонус,
-        # если несколько источников
-        # реально сошлись.
-        if source_count >= 2:
-            score += 10
-        if source_count >= 3:
-            score += 15
-        if score > best_score:
-            best_score = score
-            best_cluster = cluster
-    if not best_cluster:
-        return None
-    # Если есть только один результат
-    # низкого качества — НЕ доверяем ему.
+        candidates.append({
+            **candidate,
+            "total_score":
+                total_score,
+            "sources":
+                sources
+        })
+    candidates.sort(
+        key=lambda x:
+            x["total_score"],
+        reverse=True
+    )
+    best = candidates[0]
+    # ========================================================
+    # ЗАЩИТА ОТ ЦЕНТРА УЛИЦЫ
+    # ========================================================
+    # Если результат один и он слабый —
+    # не отправляем.
     if (
-        len(best_cluster) == 1
-        and best_cluster[0].get(
-            "quality",
-            0
-        ) < 4
+        len(results) == 1
+        and best["score"] < 12
     ):
         return None
-    # ========================================================
-    # ВЫБИРАЕМ ЛУЧШУЮ ТОЧКУ ВНУТРИ КЛАСТЕРА
-    # ========================================================
-    best = max(
-        best_cluster,
-        key=lambda x: x.get(
-            "quality",
-            0
-        )
-    )
-    return {
-        "lat": best["lat"],
-        "lon": best["lon"],
-        "label": best.get(
-            "label",
-            ""
-        ),
-        "sources": sorted(
-            set(
-                x["source"]
-                for x in best_cluster
-            )
-        ),
-        "score": best_score,
-        "count": len(best_cluster)
-    }
+    # Если результат найден одним источником,
+    # но сам источник считает его точным —
+    # разрешаем.
+    if (
+        len(best["sources"]) == 1
+        and best["score"] < 15
+    ):
+        return None
+    return best
 # ============================================================
 # ПОЛНЫЙ ПОИСК
 # ============================================================
-def find_best_address(
+def find_address(
     street,
     house
 ):
     all_results = []
-    # Visicom
+    # VISICOM
     visicom = search_visicom(
         street,
         house
@@ -593,7 +772,7 @@ def find_best_address(
     all_results.extend(
         visicom
     )
-    # Mapbox
+    # MAPBOX
     mapbox = search_mapbox(
         street,
         house
@@ -610,10 +789,10 @@ def find_best_address(
         osm
     )
     print(
-        "================================"
+        "--------------------------------"
     )
     print(
-        "SEARCH:",
+        "ADDRESS:",
         street,
         house
     )
@@ -622,13 +801,10 @@ def find_best_address(
             result["source"],
             result["lat"],
             result["lon"],
-            result.get(
-                "quality",
-                0
-            )
+            result["score"]
         )
     print(
-        "================================"
+        "--------------------------------"
     )
     return choose_best(
         all_results
@@ -645,51 +821,53 @@ async def handle_message(
     text = update.message.text
     if not text:
         return
-    text = text.strip()
     address = parse_address(
         text
     )
-    # Обычные сообщения игнорируем
+    # Обычные сообщения
+    # полностью игнорируем
     if not address:
         return
-    street = address["street"]
-    house = address["house"]
-    result = find_best_address(
+    street = address[
+        "street"
+    ]
+    house = address[
+        "house"
+    ]
+    result = find_address(
         street,
         house
     )
-    # ========================================================
-    # НЕТ ДОСТАТОЧНОГО ПОДТВЕРЖДЕНИЯ
-    # ========================================================
     if not result:
         await update.message.reply_text(
-            "⚠️ Не удалось достаточно точно "
-            "подтвердить этот дом.\n\n"
-            "Метка НЕ отправлена, чтобы "
-            "не показать неправильное место."
+            "⚠️ Не удалось достаточно "
+            "надёжно определить этот дом.\n\n"
+            "Метка не отправлена."
         )
         return
     lat = result["lat"]
     lon = result["lon"]
     sources = ", ".join(
-        result["sources"]
+        sorted(
+            result["sources"]
+        )
     )
     google_maps = (
-        "https://www.google.com/maps/search/"
-        "?api=1"
+        "https://www.google.com/maps/"
+        "search/?api=1"
         f"&query={lat:.7f},{lon:.7f}"
     )
     message = (
-        "📍 <b>Адрес подтверждён</b>\n\n"
+        "📍 <b>Дом найден</b>\n\n"
         f"<b>{html.escape(street)}, "
         f"{html.escape(house)}</b>\n\n"
-        f"Координаты:\n"
+        f"📌 Координаты:\n"
         f"<code>{lat:.7f}, "
         f"{lon:.7f}</code>\n\n"
-        f"✅ Проверено: "
+        f"🔎 Проверено источников: "
         f"{html.escape(sources)}\n\n"
         f"🗺 <a href=\"{google_maps}\">"
-        f"Открыть в Google Maps"
+        f"Открыть Google Maps"
         f"</a>"
     )
     await update.message.reply_text(
@@ -697,7 +875,7 @@ async def handle_message(
         parse_mode="HTML"
     )
 # ============================================================
-# ЗАПУСК
+# START
 # ============================================================
 def main():
     if (
@@ -706,7 +884,7 @@ def main():
         == "ВСТАВЬ_ТОКЕН_TELEGRAM"
     ):
         print(
-            "❌ Не указан Telegram token"
+            "❌ Укажи TELEGRAM_TOKEN"
         )
         return
     if (
@@ -715,11 +893,11 @@ def main():
         == "ВСТАВЬ_VISICOM_API_KEY"
     ):
         print(
-            "❌ Не указан Visicom API key"
+            "❌ Укажи VISICOM_API_KEY"
         )
         return
     print(
-        "===================================="
+        "=================================="
     )
     print(
         "KRYVYI RIH ADDRESS BOT"
@@ -728,10 +906,10 @@ def main():
         "VISICOM + MAPBOX + OSM"
     )
     print(
-        "STRICT ADDRESS VERIFICATION"
+        "MULTI QUERY SEARCH"
     )
     print(
-        "===================================="
+        "=================================="
     )
     app = (
         Application
